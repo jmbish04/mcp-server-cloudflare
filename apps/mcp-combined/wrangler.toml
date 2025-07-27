@@ -1,147 +1,202 @@
-# mcp-server-cloudflare/wrangler.toml
-
 name = "mcp-server-cloudflare"
-main = "dist/worker.js" # Assuming you build your TS to JS
-compatibility_date = "2025-03-10" # Use the latest compatibility_date across all sub-apps
+main = "dist/worker.js"
+compatibility_date = "2025-04-03"
 compatibility_flags = ["nodejs_compat"]
 
 [observability.logs]
 enabled = true
 
-# =========================================================================
-# Durable Objects Bindings - Consolidated from all sub-applications
-# Each class needs its own unique binding name here.
-# We will then map these to `MCP_OBJECT` when calling the sub-app's fetch.
-# =========================================================================
 [durable_objects]
 bindings = [
-  # From docs-vectorize/src/docs-vectorize.app.ts
+  { class_name = "BrowserMCP", name = "BROWSER_MCP_DO" },
   { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
-
-  # From sandbox-container/server/sandbox.server.app.ts
   { class_name = "ContainerMcpAgent", name = "SANDBOX_MCP_DO" },
-  { class_name = "ContainerManager", name = "CONTAINER_MANAGER_DO" }, # Also needed by sandbox
-  { class_name = "UserContainer", name = "USER_CONTAINER_DO" },       # Also needed by sandbox
-
-  # From workers-bindings/src/bindings.app.ts
+  { class_name = "ContainerManager", name = "CONTAINER_MANAGER_DO" },
+  { class_name = "UserContainer", name = "USER_CONTAINER_DO" },
   { class_name = "WorkersBindingsMCP", name = "BINDINGS_MCP_DO" },
-  { class_name = "UserDetails", name = "USER_DETAILS_DO" }, # Used by Bindings & Observability
-
-  # From workers-builds/src/workers-builds.app.ts
   { class_name = "BuildsMCP", name = "BUILDS_MCP_DO" },
-  # UserDetails already listed above
-
-  # From workers-observability/src/workers-observability.app.ts
-  { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" }
-  # UserDetails already listed above
+  { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" },
+  { class_name = "UserDetails", name = "USER_DETAILS_DO" },
 ]
 
-# =========================================================================
-# AI Bindings - Consolidated
-# =========================================================================
 [ai]
-binding = "AI" # Assuming all sub-apps use a single AI binding named "AI"
+binding = "AI"
 
-# =========================================================================
-# Vectorize Bindings - Consolidated
-# =========================================================================
 [[vectorize]]
 binding = "VECTORIZE"
-index_name = "docs-bge-base" # This must refer to an existing Vectorize index in your account
+index_name = "docs-bge-base"
 
-# =========================================================================
-# KV Namespaces - Consolidated
-# =========================================================================
 [[kv_namespaces]]
 binding = "OAUTH_KV"
-id = "DEV_KV" # Use a single ID for development, ensure it exists or create one
+id = "DEV_KV"
 
 [[kv_namespaces]]
 binding = "USER_BLOCKLIST"
-id = "DEV_BLOCKLIST" # Use a single ID for development, ensure it exists or create one
+id = "DEV_BLOCKLIST"
 
-# =========================================================================
-# Container Bindings - From sandbox-container
-# Ensure the Dockerfile is accessible relative to this wrangler.toml or specify full path
-# =========================================================================
 [[containers]]
 name = "sandbox-container"
-image = "./Dockerfile" # Adjust path if your Dockerfile is not directly in the combined worker root
-class_name = "UserContainer" # The DO class that manages the container
+image = "../sandbox-container/Dockerfile"
+class_name = "UserContainer"
 max_instances = 2
 rollout_step_percentage = 100
 
-# =========================================================================
-# Analytics Engine Datasets - Consolidated
-# =========================================================================
 [[analytics_engine_datasets]]
 binding = "MCP_METRICS"
-dataset = "mcp-metrics-dev" # Use a single dataset for development, ensure it exists or create one
+dataset = "mcp-metrics-dev"
 
-# =========================================================================
-# Variables (Optional, consolidate as needed)
-# =========================================================================
 [vars]
 ENVIRONMENT = "development"
-MCP_SERVER_NAME = "mcp-server-cloudflare" # Can be dynamic
-MCP_SERVER_VERSION = "1.0.0" # Can be dynamic
-CLOUDFLARE_CLIENT_ID = "<YOUR_CLOUDFLARE_CLIENT_ID>"
-CLOUDFLARE_CLIENT_SECRET = "<YOUR_CLOUDFLARE_CLIENT_SECRET>"
+MCP_SERVER_NAME = "<PLACEHOLDER>"
+MCP_SERVER_VERSION = "<PLACEHOLDER>"
+CLOUDFLARE_CLIENT_ID = "<PLACEHOLDER>"
+CLOUDFLARE_CLIENT_SECRET = "<PLACEHOLDER>"
 
-# =========================================================================
-# Migrations - Consolidated
-# Combine all migrations, ensure tags are unique and in correct order
-# =========================================================================
 [[migrations]]
 tag = "v1_docs"
 new_sqlite_classes = ["CloudflareDocumentationMCP"]
 
 [[migrations]]
-tag = "v1_sandbox"
+tag = "v1_sandbox_manager_agent"
 new_sqlite_classes = ["ContainerManager", "ContainerMcpAgent"]
 
 [[migrations]]
-tag = "v2_sandbox" # New tag for subsequent migration for UserContainer
+tag = "v2_sandbox_user_container"
 new_sqlite_classes = ["UserContainer"]
 
 [[migrations]]
+tag = "v1_browser"
+new_sqlite_classes = ["BrowserMCP"]
+
+[[migrations]]
 tag = "v1_bindings"
-new_sqlite_classes = ["WorkersBindingsMCP", "UserDetails"] # UserDetails is shared, but list it here
+new_sqlite_classes = ["WorkersBindingsMCP"]
 
 [[migrations]]
 tag = "v1_builds"
-new_sqlite_classes = ["BuildsMCP"] # UserDetails is already in v1_bindings
+new_sqlite_classes = ["UserDetails", "BuildsMCP"]
 
 [[migrations]]
 tag = "v1_observability"
-new_sqlite_classes = ["ObservabilityMCP"] # UserDetails is already in v1_bindings
+new_sqlite_classes = ["UserDetails", "ObservabilityMCP"]
 
-
-# =========================================================================
-# Dev environment configuration (optional, if you have specific dev needs)
-# =========================================================================
 [dev]
-port = 8787 # Or any available port
+port = 8787
 
-# You'll need to replicate `env.staging` and `env.production` sections similarly,
-# ensuring all bindings and `vars` are explicitly defined for each environment,
-# and that `account_id` and `routes` are correct for your deployments.
-# Remember Durable Object bindings are NOT inherited by environments, so
-# you must explicitly define them in each [[env.staging]].durable_objects.bindings.
-# Example for `staging` env (apply same logic for `production`):
-# [env.staging]
-# name = "mcp-server-cloudflare-staging"
-# account_id = "your_staging_account_id"
-# routes = [{ pattern = "mcp-server-staging.hacolby.workers.dev", custom_domain = true }]
-#
-# [env.staging.durable_objects]
-# bindings = [
-#   { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
-#   { class_name = "ContainerMcpAgent", name = "SANDBOX_MCP_DO" },
-#   # ... all other DO bindings for staging
-# ]
-#
-# [env.staging.ai]
-# binding = "AI"
-#
-# # ... all other bindings for staging
+[env.staging]
+name = "mcp-server-cloudflare-staging"
+account_id = "6702657b6aa048cf3081ff3ff3c9c52f"
+routes = [
+  { pattern = "browser-staging.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "docs-staging.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "containers-staging.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "bindings-staging.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "builds-staging.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "observability-staging.mcp.cloudflare.com", custom_domain = true },
+]
+
+[env.staging.durable_objects]
+bindings = [
+  { class_name = "BrowserMCP", name = "BROWSER_MCP_DO" },
+  { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
+  { class_name = "ContainerMcpAgent", name = "SANDBOX_MCP_DO" },
+  { class_name = "ContainerManager", name = "CONTAINER_MANAGER_DO" },
+  { class_name = "UserContainer", name = "USER_CONTAINER_DO" },
+  { class_name = "WorkersBindingsMCP", name = "BINDINGS_MCP_DO" },
+  { class_name = "BuildsMCP", name = "BUILDS_MCP_DO" },
+  { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" },
+  { class_name = "UserDetails", name = "USER_DETAILS_DO" },
+]
+
+[env.staging.ai]
+binding = "AI"
+
+[[env.staging.vectorize]]
+binding = "VECTORIZE"
+index_name = "docs-bge-base"
+
+[[env.staging.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "a6ad24203a244d248f2fe1acfeb7b3a3"
+
+[[env.staging.kv_namespaces]]
+binding = "USER_BLOCKLIST"
+id = "68e95343ded8448db179256c68f175b2"
+
+[[env.staging.containers]]
+name = "sandbox-container-staging"
+image = "registry.cloudchamber.cfdata.org/sandbox-container:d802004"
+class_name = "UserContainer"
+max_instances = 5
+rollout_step_percentage = 100
+instances = 3
+
+[[env.staging.analytics_engine_datasets]]
+binding = "MCP_METRICS"
+dataset = "mcp-metrics-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+MCP_SERVER_NAME = "<PLACEHOLDER>"
+MCP_SERVER_VERSION = "1.0.0"
+CLOUDFLARE_CLIENT_ID = "<PLACEHOLDER>"
+CLOUDFLARE_CLIENT_SECRET = "<PLACEHOLDER>"
+
+[env.production]
+name = "mcp-server-cloudflare-production"
+account_id = "6702657b6aa048cf3081ff3ff3c9c52f"
+routes = [
+  { pattern = "browser.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "docs.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "containers.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "bindings.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "builds.mcp.cloudflare.com", custom_domain = true },
+  { pattern = "observability.mcp.cloudflare.com", custom_domain = true },
+]
+
+[env.production.durable_objects]
+bindings = [
+  { class_name = "BrowserMCP", name = "BROWSER_MCP_DO" },
+  { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
+  { class_name = "ContainerMcpAgent", name = "SANDBOX_MCP_DO" },
+  { class_name = "ContainerManager", name = "CONTAINER_MANAGER_DO" },
+  { class_name = "UserContainer", name = "USER_CONTAINER_DO" },
+  { class_name = "WorkersBindingsMCP", name = "BINDINGS_MCP_DO" },
+  { class_name = "BuildsMCP", name = "BUILDS_MCP_DO" },
+  { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" },
+  { class_name = "UserDetails", name = "USER_DETAILS_DO" },
+]
+
+[env.production.ai]
+binding = "AI"
+
+[[env.production.vectorize]]
+binding = "VECTORIZE"
+index_name = "docs-bge-base"
+
+[[env.production.kv_namespaces]]
+binding = "OAUTH_KV"
+id = "753f27a19ef94d7dbd49de05588ca890"
+
+[[env.production.kv_namespaces]]
+binding = "USER_BLOCKLIST"
+id = "b874d6ae29ec43e5afad7be8da067676"
+
+[[env.production.containers]]
+name = "sandbox-container"
+image = "registry.cloudchamber.cfdata.org/sandbox-container:d802004"
+class_name = "UserContainer"
+max_instances = 50
+rollout_step_percentage = 100
+instances = 10
+
+[[env.production.analytics_engine_datasets]]
+binding = "MCP_METRICS"
+dataset = "mcp-metrics-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+MCP_SERVER_NAME = "<PLACEHOLDER>"
+MCP_SERVER_VERSION = "1.0.0"
+CLOUDFLARE_CLIENT_ID = "<PLACEHOLDER>"
+CLOUDFLARE_CLIENT_SECRET = "<PLACEHOLDER>"
