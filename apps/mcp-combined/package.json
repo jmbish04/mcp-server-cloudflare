@@ -5,7 +5,7 @@
   "scripts": {
     "check:lint": "run-eslint-workers",
     "check:types": "run-tsc",
-    "deploy": "run-wrangler-deploy",
+		"deploy": "pnpm install --no-frozen-lockfile && npx wrangler deploy",
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "types": "wrangler types --include-env=false",
