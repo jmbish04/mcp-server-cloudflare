@@ -1,5 +1,3 @@
-# wrangler.toml
-
 name = "mcp-server-cloudflare"
 main = "src/combined.app.ts"
 compatibility_date = "2025-03-10"
