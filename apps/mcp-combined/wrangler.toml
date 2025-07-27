@@ -2,7 +2,7 @@ name = "mcp-server-cloudflare"
 main = "src/combined.app.ts" # Assuming you build your TS to JS
 compatibility_date = "2025-03-10" # Use the latest compatibility_date across all sub-apps
 compatibility_flags = ["nodejs_compat"]
-environment = "production" # Add this line
+
 
 [observability.logs]
 enabled = true
