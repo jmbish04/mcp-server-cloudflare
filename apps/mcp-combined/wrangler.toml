@@ -1,7 +1,7 @@
 # mcp-server-cloudflare/wrangler.toml
 
 name = "mcp-server-cloudflare"
-main = "dist/worker.js" # Assuming you build your TS to JS
+main = "src/combined.app.ts" # Assuming you build your TS to JS
 compatibility_date = "2025-03-10" # Use the latest compatibility_date across all sub-apps
 compatibility_flags = ["nodejs_compat"]
 
@@ -9,139 +9,115 @@ compatibility_flags = ["nodejs_compat"]
 enabled = true
 
 # =========================================================================
-# Durable Objects Bindings - Consolidated from all sub-applications
-# Each class needs its own unique binding name here.
-# We will then map these to `MCP_OBJECT` when calling the sub-app's fetch.
+# Production Environment Configuration
+# All bindings, variables, and migrations are now defined within this section.
 # =========================================================================
-[durable_objects]
+[env.production]
+name = "mcp-server-cloudflare-production"
+account_id = "b3304b14848de15c72c24a14b0cd187d" # Consistent account ID from sub-app production configs
+routes = [{ pattern = "mcp-server-cloudflare.hacolby.workers.dev", custom_domain = true }] # Example combined domain
+
+# Durable Objects Bindings - Consolidated from all sub-application production configs
+[env.production.durable_objects]
 bindings = [
-  # From docs-vectorize/src/docs-vectorize.app.ts
+  # From browser-rendering
+  { class_name = "BrowserMCP", name = "BROWSER_MCP_DO" },
+  # UserDetails is listed once below
+
+  # From docs-vectorize
   { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
 
-  # From sandbox-container/server/sandbox.server.app.ts
+  # From sandbox-container
   { class_name = "ContainerMcpAgent", name = "SANDBOX_MCP_DO" },
-  { class_name = "ContainerManager", name = "CONTAINER_MANAGER_DO" }, # Also needed by sandbox
-  { class_name = "UserContainer", name = "USER_CONTAINER_DO" },       # Also needed by sandbox
+  { class_name = "ContainerManager", name = "CONTAINER_MANAGER_DO" },
+  { class_name = "UserContainer", name = "USER_CONTAINER_DO" },
 
-  # From workers-bindings/src/bindings.app.ts
+  # From workers-bindings
   { class_name = "WorkersBindingsMCP", name = "BINDINGS_MCP_DO" },
-  { class_name = "UserDetails", name = "USER_DETAILS_DO" }, # Used by Bindings & Observability
+  # UserDetails is listed once below
 
-  # From workers-builds/src/workers-builds.app.ts
+  # From workers-builds
   { class_name = "BuildsMCP", name = "BUILDS_MCP_DO" },
-  # UserDetails already listed above
+  # UserDetails is listed once below
 
-  # From workers-observability/src/workers-observability.app.ts
-  { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" }
-  # UserDetails already listed above
+  # From workers-observability
+  { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" },
+
+  # Shared UserDetails Durable Object
+  { class_name = "UserDetails", name = "USER_DETAILS_DO" }
 ]
 
-# =========================================================================
-# AI Bindings - Consolidated
-# =========================================================================
-[ai]
-binding = "AI" # Assuming all sub-apps use a single AI binding named "AI"
+# AI Binding - Consolidated
+[env.production.ai]
+binding = "AI"
 
-# =========================================================================
 # Vectorize Bindings - Consolidated
-# =========================================================================
-[[vectorize]]
+[[env.production.vectorize]]
 binding = "VECTORIZE"
-index_name = "docs-bge-base" # This must refer to an existing Vectorize index in your account
+index_name = "docs-bge-base"
 
-# =========================================================================
-# KV Namespaces - Consolidated
-# =========================================================================
-[[kv_namespaces]]
+# KV Namespaces - Consolidated (using IDs found in production envs of sub-apps)
+# Note: If there are conflicts or specific needs for different KV IDs for the same binding
+# across sub-apps in production, you would need to adjust this,
+# or create separate KV bindings and map them in combined.app.ts.
+# Here, we pick one set of production IDs as a representative example.
+[[env.production.kv_namespaces]]
 binding = "OAUTH_KV"
-id = "DEV_KV" # Use a single ID for development, ensure it exists or create one
-
-[[kv_namespaces]]
+id = "8d66696bdd534133bbc6a773b8caf99b" # Example: From sandbox-container production
+[[env.production.kv_namespaces]]
 binding = "USER_BLOCKLIST"
-id = "DEV_BLOCKLIST" # Use a single ID for development, ensure it exists or create one
+id = "b874d6ae29ec43e5afad7be8da067676" # Example: From sandbox-container production
 
-# =========================================================================
-# Container Bindings - From sandbox-container
-# Ensure the Dockerfile is accessible relative to this wrangler.toml or specify full path
-# =========================================================================
-[[containers]]
+# Container Bindings - From sandbox-container production
+[[env.production.containers]]
 name = "sandbox-container"
-image = "./Dockerfile" # Adjust path if your Dockerfile is not directly in the combined worker root
-class_name = "UserContainer" # The DO class that manages the container
-max_instances = 2
+image = "registry.cloudchamber.cfdata.org/sandbox-container:d802004" # Production image from sandbox-container
+class_name = "UserContainer"
+max_instances = 50 # Max from sandbox-container production
 rollout_step_percentage = 100
+instances = 10 # Instances from sandbox-container production
 
-# =========================================================================
 # Analytics Engine Datasets - Consolidated
-# =========================================================================
-[[analytics_engine_datasets]]
+[[env.production.analytics_engine_datasets]]
 binding = "MCP_METRICS"
-dataset = "mcp-metrics-dev" # Use a single dataset for development, ensure it exists or create one
+dataset = "mcp-metrics-production"
 
-# =========================================================================
-# Variables (Optional, consolidate as needed)
-# =========================================================================
-[vars]
-ENVIRONMENT = "development"
-MCP_SERVER_NAME = "mcp-server-cloudflare" # Can be dynamic
-MCP_SERVER_VERSION = "1.0.0" # Can be dynamic
-CLOUDFLARE_CLIENT_ID = "<YOUR_CLOUDFLARE_CLIENT_ID>"
-CLOUDFLARE_CLIENT_SECRET = "<YOUR_CLOUDFLARE_CLIENT_SECRET>"
+# Variables - Consolidated
+[env.production.vars]
+ENVIRONMENT = "production"
+MCP_SERVER_NAME = "mcp-server-cloudflare-production" # Name for the combined worker
+MCP_SERVER_VERSION = "1.0.0" # Version for the combined worker
+CLOUDFLARE_CLIENT_ID = "<YOUR_CLOUDFLARE_CLIENT_ID>" # Retain placeholder if not filled
+CLOUDFLARE_CLIENT_SECRET = "<YOUR_CLOUDFLARE_CLIENT_SECRET>" # Retain placeholder if not filled
+GIT_HASH = "OVERRIDEN_DURING_DEPLOYMENT" # From workers-builds/observability production
+SENTRY_DSN = "https://2cc5007c2ad5f33e9be007d4b40208ef@sentry10.cfdata.org/1793" # Example: From workers-builds production
 
-# =========================================================================
-# Migrations - Consolidated
-# Combine all migrations, ensure tags are unique and in correct order
-# =========================================================================
-[[migrations]]
+# Migrations - Consolidated (ensure tags are unique and in correct order)
+# These are applied to the Durable Objects declared within this production environment.
+[[env.production.migrations]]
+tag = "v1_browser"
+new_sqlite_classes = ["BrowserMCP"]
+
+[[env.production.migrations]]
 tag = "v1_docs"
 new_sqlite_classes = ["CloudflareDocumentationMCP"]
 
-[[migrations]]
-tag = "v1_sandbox"
+[[env.production.migrations]]
+tag = "v1_sandbox_manager_agent"
 new_sqlite_classes = ["ContainerManager", "ContainerMcpAgent"]
 
-[[migrations]]
-tag = "v2_sandbox" # New tag for subsequent migration for UserContainer
+[[env.production.migrations]]
+tag = "v2_sandbox_user_container"
 new_sqlite_classes = ["UserContainer"]
 
-[[migrations]]
-tag = "v1_bindings"
-new_sqlite_classes = ["WorkersBindingsMCP", "UserDetails"] # UserDetails is shared, but list it here
+[[env.production.migrations]]
+tag = "v1_bindings_user_details"
+new_sqlite_classes = ["WorkersBindingsMCP", "UserDetails"]
 
-[[migrations]]
+[[env.production.migrations]]
 tag = "v1_builds"
-new_sqlite_classes = ["BuildsMCP"] # UserDetails is already in v1_bindings
+new_sqlite_classes = ["BuildsMCP"]
 
-[[migrations]]
+[[env.production.migrations]]
 tag = "v1_observability"
-new_sqlite_classes = ["ObservabilityMCP"] # UserDetails is already in v1_bindings
-
-
-# =========================================================================
-# Dev environment configuration (optional, if you have specific dev needs)
-# =========================================================================
-[dev]
-port = 8787 # Or any available port
-
-# You'll need to replicate `env.staging` and `env.production` sections similarly,
-# ensuring all bindings and `vars` are explicitly defined for each environment,
-# and that `account_id` and `routes` are correct for your deployments.
-# Remember Durable Object bindings are NOT inherited by environments, so
-# you must explicitly define them in each [[env.staging]].durable_objects.bindings.
-# Example for `staging` env (apply same logic for `production`):
-# [env.staging]
-# name = "mcp-server-cloudflare-staging"
-# account_id = "your_staging_account_id"
-# routes = [{ pattern = "mcp-server-staging.hacolby.workers.dev", custom_domain = true }]
-#
-# [env.staging.durable_objects]
-# bindings = [
-#   { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
-#   { class_name = "ContainerMcpAgent", name = "SANDBOX_MCP_DO" },
-#   # ... all other DO bindings for staging
-# ]
-#
-# [env.staging.ai]
-# binding = "AI"
-#
-# # ... all other bindings for staging
+new_sqlite_classes = ["ObservabilityMCP"]
