@@ -8,6 +8,35 @@ import BindingsApp, { WorkersBindingsMCP, UserDetails as BindingsUserDetails } f
 import BuildsApp, { BuildsMCP, UserDetails as BuildsUserDetails } from '../../workers-builds/src/workers-builds.app'
 import ObservabilityApp, { ObservabilityMCP, UserDetails as ObservabilityUserDetails } from '../../workers-observability/src/workers-observability.app'
 
+declare global {
+  interface Env {
+    BROWSER_MCP_DO: DurableObjectNamespace
+    DOCS_MCP_DO: DurableObjectNamespace
+    SANDBOX_MCP_DO: DurableObjectNamespace
+    BINDINGS_MCP_DO: DurableObjectNamespace
+    BUILDS_MCP_DO: DurableObjectNamespace
+    OBSERVABILITY_MCP_DO: DurableObjectNamespace
+    USER_DETAILS_DO: DurableObjectNamespace
+    CONTAINER_MANAGER_DO: DurableObjectNamespace
+    USER_CONTAINER_DO: DurableObjectNamespace
+    AI: any
+    VECTORIZE: VectorizeIndex
+    OAUTH_KV: KVNamespace
+    USER_BLOCKLIST: KVNamespace
+    MCP_METRICS: AnalyticsEngineDataset
+    ENVIRONMENT: string
+    MCP_SERVER_NAME: string
+    MCP_SERVER_VERSION: string
+    CLOUDFLARE_CLIENT_ID?: string
+    CLOUDFLARE_CLIENT_SECRET?: string
+    // dynamic mappings for sub apps
+    MCP_OBJECT?: DurableObjectNamespace
+    CONTAINER_MANAGER?: DurableObjectNamespace
+    USER_CONTAINER?: DurableObjectNamespace
+    USER_DETAILS?: DurableObjectNamespace
+  }
+}
+
 // Re-exporting the MCP types and classes as before
 export { BrowserMCP, BrowserUserDetails }
 export { CloudflareDocumentationMCP }
@@ -69,8 +98,35 @@ export default {
     newUrl.pathname = pathname;
     const newReq = new Request(newUrl.toString(), req)
 
-    // 3. Fetch the response from the sub-application
-    const subAppResponse = await handler.fetch(newReq, env, ctx);
+    let subAppEnv = { ...env } as Env
+    switch (prefix) {
+      case 'browser':
+        subAppEnv.MCP_OBJECT = env.BROWSER_MCP_DO
+        subAppEnv.USER_DETAILS = env.USER_DETAILS_DO
+        break
+      case 'docs':
+        subAppEnv.MCP_OBJECT = env.DOCS_MCP_DO
+        break
+      case 'sandbox':
+        subAppEnv.MCP_OBJECT = env.SANDBOX_MCP_DO
+        subAppEnv.CONTAINER_MANAGER = env.CONTAINER_MANAGER_DO
+        subAppEnv.USER_CONTAINER = env.USER_CONTAINER_DO
+        break
+      case 'bindings':
+        subAppEnv.MCP_OBJECT = env.BINDINGS_MCP_DO
+        subAppEnv.USER_DETAILS = env.USER_DETAILS_DO
+        break
+      case 'builds':
+        subAppEnv.MCP_OBJECT = env.BUILDS_MCP_DO
+        subAppEnv.USER_DETAILS = env.USER_DETAILS_DO
+        break
+      case 'observability':
+        subAppEnv.MCP_OBJECT = env.OBSERVABILITY_MCP_DO
+        subAppEnv.USER_DETAILS = env.USER_DETAILS_DO
+        break
+    }
+
+    const subAppResponse = await handler.fetch(newReq, subAppEnv, ctx);
 
     // 4. Apply CORS headers to the sub-application's response
     // We use the corsApp's request method again, passing the subAppResponse as the initial response.

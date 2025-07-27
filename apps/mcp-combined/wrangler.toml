@@ -1,8 +1,7 @@
-# mcp-server-cloudflare/wrangler.toml
-
 name = "mcp-server-cloudflare"
 main = "src/combined.app.ts" # Assuming you build your TS to JS
 compatibility_date = "2025-03-10" # Use the latest compatibility_date across all sub-apps
+
 compatibility_flags = ["nodejs_compat"]
 
 [observability.logs]
@@ -10,7 +9,7 @@ enabled = true
 
 # =========================================================================
 # Production Environment Configuration
-# All bindings, variables, and migrations are now defined within this section.
+# All bindings, variables, and migrations are defined within this section.
 # =========================================================================
 [env.production]
 name = "mcp-server-cloudflare-production"
@@ -22,7 +21,6 @@ routes = [{ pattern = "mcp-server-cloudflare.hacolby.workers.dev", custom_domain
 bindings = [
   # From browser-rendering
   { class_name = "BrowserMCP", name = "BROWSER_MCP_DO" },
-  # UserDetails is listed once below
 
   # From docs-vectorize
   { class_name = "CloudflareDocumentationMCP", name = "DOCS_MCP_DO" },
@@ -43,7 +41,7 @@ bindings = [
   # From workers-observability
   { class_name = "ObservabilityMCP", name = "OBSERVABILITY_MCP_DO" },
 
-  # Shared UserDetails Durable Object
+  # Shared UserDetails Durable Object (used by browser, bindings, builds, observability)
   { class_name = "UserDetails", name = "USER_DETAILS_DO" }
 ]
 
@@ -60,7 +58,7 @@ index_name = "docs-bge-base"
 # Note: If there are conflicts or specific needs for different KV IDs for the same binding
 # across sub-apps in production, you would need to adjust this,
 # or create separate KV bindings and map them in combined.app.ts.
-# Here, we pick one set of production IDs as a representative example.
+# Here, we picked representative production IDs from your sub-apps.
 [[env.production.kv_namespaces]]
 binding = "OAUTH_KV"
 id = "8d66696bdd534133bbc6a773b8caf99b" # Example: From sandbox-container production
