@@ -12,7 +12,7 @@ enabled = true
 # All bindings, variables, and migrations are defined within this section.
 # =========================================================================
 [env.production]
-name = "mcp-server-cloudflare-production"
+name = "mcp-server-cloudflare"
 account_id = "b3304b14848de15c72c24a14b0cd187d" # Consistent account ID from sub-app production configs
 routes = [{ pattern = "mcp-server-cloudflare.hacolby.workers.dev", custom_domain = true }] # Example combined domain
 
