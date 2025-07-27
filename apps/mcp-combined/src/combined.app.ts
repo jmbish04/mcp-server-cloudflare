@@ -12,7 +12,7 @@ export { WorkersBindingsMCP, BindingsUserDetails }
 export { BuildsMCP, BuildsUserDetails }
 export { ObservabilityMCP, ObservabilityUserDetails }
 
-const apps: Record<string, { fetch: (req: Request, env: any, ctx: ExecutionContext) => Promise<Response> }> = {
+const apps: Record<string, { fetch: (req: Request, env: Env, ctx: ExecutionContext) => Promise<Response> }> = {
   browser: BrowserApp,
   docs: DocsApp,
   sandbox: SandboxApp,
