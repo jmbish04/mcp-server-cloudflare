@@ -7,16 +7,6 @@ compatibility_flags = ["nodejs_compat"]
 [observability.logs]
 enabled = true
 
-# apps/mcp-combined/wrangler.toml
-
-name = "mcp-server-cloudflare"
-main = "dist/worker.js"
-compatibility_date = "2025-04-03"
-compatibility_flags = ["nodejs_compat"]
-
-[observability.logs]
-enabled = true
-
 # =========================================================================
 # Production Environment Configuration
 # All bindings, variables, and migrations are defined within this section.
