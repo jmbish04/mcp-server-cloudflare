@@ -9,8 +9,10 @@ import BindingsApp, { WorkersBindingsMCP, UserDetails as BindingsUserDetails } f
 import BuildsApp, { BuildsMCP, UserDetails as BuildsUserDetails } from '../../workers-builds/src/workers-builds.app';
 import ObservabilityApp, { ObservabilityMCP, UserDetails as ObservabilityUserDetails } from '../../workers-observability/src/workers-observability.app';
 
-// >>> ADD THIS IMPORT for the UserDetails Durable Object CLASS itself <<<
-import { UserDetails } from '../../packages/mcp-common/src/durable-objects/user_details.do';
+// >>> CHANGE THIS IMPORT <<<
+// FROM: import { UserDetails } from '../../packages/mcp-common/src/durable-objects/user_details.do';
+// TO:
+import { UserDetails } from '@repo/mcp-common/src/durable-objects/user_details.do';
 
 
 // Re-export the necessary types and classes for the worker environment
@@ -21,7 +23,7 @@ export { WorkersBindingsMCP, BindingsUserDetails };
 export { BuildsMCP, BuildsUserDetails };
 export { ObservabilityMCP, ObservabilityUserDetails };
 
-// >>> ADD THIS EXPORT for the UserDetails Durable Object CLASS itself <<<
+// ADD THIS EXPORT for the UserDetails Durable Object CLASS itself
 export { UserDetails }; // This makes the class directly discoverable by Wrangler
 
 
@@ -38,7 +40,7 @@ const apps: Record<string, { fetch: (req: Request, env: Env, ctx: ExecutionConte
 // Create a small Hono app just for the CORS middleware, this is a clean way to reuse it.
 const corsApp = new Hono();
 corsApp.use('*', cors({
-  origin: '*',
+  origin: '*', // Allows requests from any origin
   allowHeaders: ['Authorization', 'Content-Type'],
   allowMethods: ['POST', 'GET', 'OPTIONS'],
   maxAge: 86400, // Cache preflight response for 1 day
@@ -76,7 +78,6 @@ export default {
     // Dynamically map the correct MCP_OBJECT based on the prefix
     switch (prefix) {
       case 'browser':
-        // If browser-rendering uses a DO called MCP_OBJECT, map it here:
         subAppEnv.MCP_OBJECT = env.BROWSER_MCP_DO;
         subAppEnv.USER_DETAILS = env.USER_DETAILS_DO;
         break;
