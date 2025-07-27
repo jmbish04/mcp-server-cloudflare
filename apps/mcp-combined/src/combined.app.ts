@@ -31,8 +31,8 @@ export default {
     }
 
     const newUrl = new URL(req.url)
-    const pathname = '/' + rest.join('/')
-    newUrl.pathname = pathname === '/' ? '/' : pathname
+    const pathname = '/' + rest.filter(Boolean).join('/');
+    newUrl.pathname = pathname;
     const newReq = new Request(newUrl.toString(), req)
     return handler.fetch(newReq, env, ctx)
   },
