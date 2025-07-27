@@ -38,10 +38,7 @@ const apps: Record<string, { fetch: (req: Request, env: Env, ctx: ExecutionConte
 // Create a small Hono app just for the CORS middleware, this is a clean way to reuse it.
 const corsApp = new Hono();
 corsApp.use('*', cors({
-  origin: [
-    'https://playground.ai.cloudflare.com',
-    'http://localhost:6274' // For local MCP Inspector
-  ],
+  origin: '*',
   allowHeaders: ['Authorization', 'Content-Type'],
   allowMethods: ['POST', 'GET', 'OPTIONS'],
   maxAge: 86400, // Cache preflight response for 1 day
