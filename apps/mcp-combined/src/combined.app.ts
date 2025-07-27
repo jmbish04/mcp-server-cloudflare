@@ -22,7 +22,7 @@ const apps: Record<string, { fetch: (req: Request, env: Env, ctx: ExecutionConte
 }
 
 export default {
-  async fetch(req: Request, env: any, ctx: ExecutionContext): Promise<Response> {
+  async fetch(req: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(req.url)
     const [, prefix, ...rest] = url.pathname.split('/')
     const handler = apps[prefix]
