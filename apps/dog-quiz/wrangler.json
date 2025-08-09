@@ -1,0 +1,12 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "main": "src/dog-quiz.app.ts",
+  "compatibility_date": "2025-03-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "name": "dog-quiz",
+  "r2_buckets": [
+    {"binding": "DOG_IMAGES", "bucket_name": "dog-images"}
+  ],
+  "vars": {},
+  "dev": {"port": 8787}
+}

@@ -1,0 +1,22 @@
+{
+  "name": "dog-quiz",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "types": "wrangler types --include-env=false"
+  },
+  "dependencies": {
+    "@repo/mcp-common": "workspace:*"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.8.14",
+    "@types/node": "22.14.1",
+    "prettier": "3.5.3",
+    "typescript": "5.5.4",
+    "vitest": "3.0.9",
+    "wrangler": "4.10.0"
+  }
+}
